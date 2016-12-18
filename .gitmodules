@@ -1,0 +1,6 @@
+[submodule "hidapi"]
+	path = hidapi
+	url = git://github.com/signal11/hidapi.git
+[submodule "v7"]
+	path = v7
+	url = https://github.com/cesanta/v7.git

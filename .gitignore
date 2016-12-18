@@ -1,0 +1,6 @@
+*.DS_Store
+*.o
+*.tar.gz
+*.swp
+kpodd
+/popt
