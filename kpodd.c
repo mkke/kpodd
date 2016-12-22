@@ -21,10 +21,17 @@
 	#include <signal.h>
 #endif
 
+#ifdef _WIN32
+	#define HOME_ENVVAR "USERPROFILE"
+#else
+    	#define HOME_ENVVAR "HOME"
+#endif
+
 #define HID_READ_TIMEOUT 20
 #define HID_RESPONSE_LENGTH 8
 
 struct KPod_cmd_packet {
+	unsigned char report_id;
 	unsigned char cmd;
 	unsigned char data[7];
 } __attribute__((packed));
@@ -346,8 +353,10 @@ int main_hid(unsigned short productId, unsigned short vendorId,
 	}
 
 	// start the event loop
+#ifndef _WIN32
 	signal(SIGINT, sigint_handler);
 	signal(SIGTERM, sigint_handler);
+#endif
 	while (sigint == 0) {
 		if ((deviceScanInterval > 0) && (device_scan_count-- == 0)) {
 			device_scan(productId, vendorId, v7, &open_kpods);
@@ -466,12 +475,15 @@ int main(int argc, const char* argv[]) {
 
     int configPathLen = strlen(configPath);
     if (configPathLen >= 2 && configPath[0] == '~' && configPath[1] == '/') {
-    	char* home = getenv("HOME");
-    	// the configPath has 2 extra chars, but we need space for a slash and terminating NUL
-    	int len = configPathLen + strlen(home);
-    	char* newConfigPath = malloc(len);
-    	snprintf(newConfigPath, len, "%s/%s", home, configPath + 2);
-    	configPath = newConfigPath;
+    	char* home = getenv(HOME_ENVVAR);
+	if (home != NULL){ 
+    		// the configPath has 2 extra chars, but we need space
+		// for a slash and terminating NUL
+    		int len = configPathLen + strlen(home);
+    		char* newConfigPath = malloc(len);
+    		snprintf(newConfigPath, len, "%s/%s", home, configPath + 2);
+    		configPath = newConfigPath;
+	}
     }
 
     int code = main_V7(productId, vendorId, devicePath, updateInterval, deviceScanInterval, server, port, configPath);

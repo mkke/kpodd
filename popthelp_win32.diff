@@ -1,0 +1,19 @@
+*** popthelp.c.orig	2016-12-22 22:16:24.106506059 +0100
+--- popthelp.c	2016-12-22 22:16:29.158425552 +0100
+***************
+*** 10,16 ****
+  
+  #include "system.h"
+  
+! #define        POPT_USE_TIOCGWINSZ
+  #ifdef POPT_USE_TIOCGWINSZ
+  #include <sys/ioctl.h>
+  #endif
+--- 10,16 ----
+  
+  #include "system.h"
+  
+! #undef        POPT_USE_TIOCGWINSZ
+  #ifdef POPT_USE_TIOCGWINSZ
+  #include <sys/ioctl.h>
+  #endif

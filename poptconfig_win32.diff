@@ -1,0 +1,28 @@
+*** poptconfig.c.orig	2016-12-22 20:54:08.602515647 +0100
+--- poptconfig.c	2016-12-22 20:56:23.792341644 +0100
+***************
+*** 141,157 ****
+--- 141,163 ----
+  int poptSaneFile(const char * fn)
+  {
+      struct stat sb;
++ #ifndef _WIN32
+      uid_t uid = getuid();
++ #endif
+  
+      if (stat(fn, &sb) == -1)
+  	return 1;
++ #ifndef _WIN32
+      if ((uid_t)sb.st_uid != uid)
+  	return 0;
++ #endif
+      if (!S_ISREG(sb.st_mode))
+  	return 0;
+  /*@-bitwisesigned@*/
++ #ifndef _WIN32
+      if (sb.st_mode & (S_IWGRP|S_IWOTH))
+  	return 0;
++ #endif
+  /*@=bitwisesigned@*/
+      return 1;
+  }
