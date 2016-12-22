@@ -397,7 +397,7 @@ int main_V7(unsigned short productId, unsigned short vendorId,
     		return 2;
     	case V7_EXEC_EXCEPTION: // if js_code threw an exception. result stores an exception object.
     		//fprintf(stderr, "%s: exception occurred\n", configPath);
-    		v7_print_error(stderr, v7, NULL, v7_result);
+    		v7_print_error(stderr, v7, "load_config", v7_result);
     		return 2;
     	case V7_AST_TOO_LARGE: // if js_code contains an AST segment longer than 16 bit. result is undefined.
     		fprintf(stderr, "%s: AST too large\n", configPath);

@@ -2,6 +2,28 @@
 KPodd connects to a [K-Pod](http://www.elecraft.com/k-pod/k-pod.htm) input
 device via it's USB HID interface.
 
+## Installation
+KPodd is designed either to be called with a single device path, or to run
+continuously and scan for new devices.
+
+The configuration file is expected in $HOME/.kpod or must be specified
+explicitly with '-c <path>'.
+
+### MacOS
+KPodd should run without any further preparations.
+
+### Linux
+KPodd needs access to the hidraw device which is usually only allowed for root.
+To be able to run kpodd as user, a udev rule is needed:
+    ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="f12d", GROUP="kpod"
+
+## Configuration
+The configuration file is a JavaScript file that is executed at program start
+and must provide callbacks for onDeviceAdded and onDeviceRemoved.
+Also, the KPod prototype object and it's onUpdateReport must be provided.
+For every device found, a new object is created with the KPod object as
+prototype.
+
 ## License
 Kpodd uses signal11's hidapi library (http://www.signal11.us/oss/hidapi/),
 libpopt for command-line processing (http://rpm5.org/files/popt/),
