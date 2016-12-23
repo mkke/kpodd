@@ -1,8 +1,20 @@
+var BEEP_1000HZ = 0;
+var BEEP_1500HZ = 1;
+var BEEP_2000HZ = 2;
+var BEEP_500HZ = 3;
+
+var BEEP_LEVEL_LOW    = 0;
+var BEEP_LEVEL_MEDIUM = 1;
+var BEEP_LEVEL_HIGH   = 2;
+
+var SCALE_200CPR = 0;
+var SCALE_100CPR = 1;
+
 function onDeviceAdded(kpod) {
 	print(kpod.manufacturer + " " + kpod.product + " " + kpod.getId() + " (V " + (kpod.version()) + ") added");
-	kpod.beep(3, 2, 5);
+	kpod.beep(BEEP_500HZ, BEEP_LEVEL_HIGH, 5);
 	kpod.ledAuxControl(true, true);
-	kpod.configure(200, true);
+	kpod.configure(SCALE_200CPR, true);
 	
 	try {
 		kpod.freq = rig.get_freq();
@@ -66,16 +78,16 @@ var KPod = {
 			}
 			switch (this.speed) {
 			case 1:
-				this.beep(3, 2, 20);
+				this.beep(BEEP_500HZ, BEEP_LEVEL_HIGH, 20);
 				break;
 			case 10:
-				this.beep(0, 2, 10);
+				this.beep(BEEP_1000HZ, BEEP_LEVEL_HIGH, 10);
 				break;
 			case 100:
-				this.beep(1, 2, 10);
+				this.beep(BEEP_1500HZ, BEEP_LEVEL_HIGH, 10);
 				break;
 			case 1000:
-				this.beep(2, 2, 10);
+				this.beep(BEEP_2000HZ, BEEP_LEVEL_HIGH, 10);
 				break;
 			}
 			break;
@@ -85,7 +97,7 @@ var KPod = {
 		return this.send(0x5a, toneFrequency, toneLevel, duration);
 	},
 	configure: function(scale, mute) {
-		return this.send(0x43, (scale == 100 ? 2 : 0) + (mute ? 1 : 0));
+		return this.send(0x43, (scale == SCALE_100CPR ? 2 : 0) + (mute ? 1 : 0));
 	},
 	getId: function() {
 		var report = this.send(0x3d);
