@@ -43,7 +43,7 @@ var KPod = {
 		var ri = (report[3] & 0x60) >> 5;
 		var rocker = ri == 0x00 ? "center" : ri == 0x01 ? "right" : ri == 0x02 ? "left" : "error";
 
-		if (Date.now() - this.lastUpdate > 60000) {
+		if (Date.now() - this.lastUpdate > 1000) {
 			try {
 				this.freq = rig.get_freq();
 				this.lastUpdate = Date.now();
