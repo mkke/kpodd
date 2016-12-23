@@ -123,6 +123,17 @@ static void js_array_for_kpod_report(struct v7* v7, unsigned char kpod_report[8]
 	}
 }
 
+static enum v7_err js_system(struct v7 *v7, v7_val_t* result) {
+	v7_val_t arg0 = v7_arg(v7, 0);
+	const char* command = v7_get_cstring(v7, &arg0);
+	if (command == NULL) {
+		return v7_throwf(v7, "Error", "system command expected\n");
+	}
+	int code = system(command);
+	*result = v7_mk_number(v7, code);
+	return V7_OK;
+}
+
 static enum v7_err js_kpod_send(struct v7 *v7, v7_val_t* result) {
 	struct KPod_device* kpod = v7_get_user_data(v7, v7_get_this(v7));
 
@@ -337,7 +348,7 @@ void device_scan(unsigned short productId, unsigned short vendorId, struct v7* v
 
 int main_hid(unsigned short productId, unsigned short vendorId,
 		char* devicePath, long updateInterval, long deviceScanInterval,
-		char* server, unsigned short port, struct v7 *v7) {
+		struct v7 *v7) {
 	struct KPod_device_list open_kpods = {0};
 	long device_scan_count = 0;
 	int code;
@@ -397,6 +408,19 @@ int main_V7(unsigned short productId, unsigned short vendorId,
 		char* server, unsigned short port, char* configPath) {
     struct v7 *v7 = v7_create();
 
+    v7_val_t js_options = v7_mk_object(v7);
+    if (devicePath != NULL) {
+    	v7_set(v7, js_options, "devicePath", ~0, v7_mk_string(v7, devicePath, ~0, 1));
+    }
+    v7_set(v7, js_options, "updateInterval", ~0, v7_mk_number(v7, updateInterval));
+    v7_set(v7, js_options, "deviceScanInterval", ~0, v7_mk_number(v7, deviceScanInterval));
+    v7_set(v7, js_options, "server", ~0, v7_mk_string(v7, server, ~0, 1));
+    v7_set(v7, js_options, "port", ~0, v7_mk_number(v7, port));
+    v7_set(v7, js_options, "configPath", ~0, v7_mk_string(v7, configPath, ~0, 1));
+    v7_set(v7, v7_get_global(v7), "options", ~0, js_options);
+
+    v7_set(v7, v7_get_global(v7), "system", ~0, v7_mk_function(v7, &js_system));
+
     enum v7_err err;
     v7_val_t v7_result;
     if ((err = v7_exec_file(v7, configPath, &v7_result)) != V7_OK) {
@@ -419,7 +443,7 @@ int main_V7(unsigned short productId, unsigned short vendorId,
     	}
     }
 
-    int code = main_hid(productId, vendorId, devicePath, updateInterval, deviceScanInterval, server, port, v7);
+    int code = main_hid(productId, vendorId, devicePath, updateInterval, deviceScanInterval, v7);
 
 	v7_destroy(v7);
 	return code;

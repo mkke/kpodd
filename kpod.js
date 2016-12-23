@@ -3,14 +3,24 @@ function onDeviceAdded(kpod) {
 	kpod.beep(3, 2, 5);
 	kpod.ledAuxControl(true, true);
 	kpod.configure(200, true);
+	
+	try {
+		kpod.freq = rig.get_freq();
+		kpod.lastUpdate = Date.now();
+	} catch (e) {
+		print("cannot get freq: " + e);
+	}
 }
 
 function onDeviceRemoved(kpod) {
 	print("kpod removed");
 }
 
+// the KPod prototype
 var KPod = {
-	pos: 0,
+	freq: 0,
+	speed: 1,
+	lastUpdate: 0,
 	onUpdateReport: function(report) {
 		var ticks = (report[2] * 256 + report[1]);
 		if (ticks & 0x8000) {
@@ -20,10 +30,56 @@ var KPod = {
 		var hold = !!(report[3] & 0x10);
 		var ri = (report[3] & 0x60) >> 5;
 		var rocker = ri == 0x00 ? "center" : ri == 0x01 ? "right" : ri == 0x02 ? "left" : "error";
+
+		if (Date.now() - this.lastUpdate > 60000) {
+			try {
+				this.freq = rig.get_freq();
+				this.lastUpdate = Date.now();
+			} catch (e) {
+				print(e);
+				return; // no point in continuing
+			}
+		}
 		
-		this.pos += ticks;
-		print("pos = " + this.pos + "; ticks = " + ticks + "; button = " + button + "; "
-				+ "hold = " + hold + "; rocker = " + rocker);
+		if (ticks != 0) {
+			this.freq += ticks * this.speed;
+			print("freq = " + this.freq + "; ticks = " + ticks + "; button = " + button + "; "
+					+ "hold = " + hold + "; rocker = " + rocker);
+			try {
+				rig.set_freq(this.freq);
+				this.lastUpdate = Date.now();
+			} catch (e) {
+				print(e);
+			}
+		}
+		
+		switch (button) {
+		case 1:
+			// this will only work on MacOS
+			system("say '" + (this.freq / 1000000).toFixed(3).replace("\\.", ",") + " megahertz'");
+			break;
+		case 5:
+			if (hold) {
+				this.speed = 1;
+			} else if (this.speed < 1000) {
+				this.speed *= 10;
+			}
+			switch (this.speed) {
+			case 1:
+				this.beep(3, 2, 20);
+				break;
+			case 10:
+				this.beep(0, 2, 10);
+				break;
+			case 100:
+				this.beep(1, 2, 10);
+				break;
+			case 1000:
+				this.beep(2, 2, 10);
+				break;
+			}
+			break;
+		}
 	},
 	beep: function(toneFrequency, toneLevel, duration) {
 		return this.send(0x5a, toneFrequency, toneLevel, duration);
@@ -56,10 +112,66 @@ var KPod = {
 	}
 };
 
-print("kpod.js loaded");
-/*
-rig.getFrequency(function (rigFrequency) {
-	print("rig frequency = " + rigFrequency);
-	freq = rigFrequency;
-});
-*/
+function Rig(server, port) {
+	this.server = server;
+	this.port = port;
+	this.socket = Socket.connect(server, port);
+}
+
+// sends a command and wait for response in '+' format (newline-separated)
+Rig.prototype.send = function(cmd) {
+	if (this.socket === null) {
+		this.socket = Socket.connect(this.server, this.port);
+	}
+	if (this.socket === null) {
+		throw "rig://" + this.server + ":" + this.port + ": connect failed";
+	}
+	if (this.socket.send(cmd + "\n") == 0) {
+		this.socket = null;
+		throw "rig://" + this.server + ":" + this.port + ": send failed";
+	}
+	
+	var response = "";
+	while (response.indexOf("\nRPRT") < 0) {
+		var resp = this.socket.recv();
+		if (resp === null || resp === "") {
+			this.socket = null;
+			throw "rig://" + this.server + ":" + this.port + ": client disconnected";
+		}
+		
+		response += resp;
+	}
+	
+	var lines = response.split("\n");
+	var responseObj = {
+		"cmd": lines.shift()	
+	};
+	
+	lines.forEach(function (line) {
+		if (line.indexOf("RPRT ") == 0) {
+			var code = line.substr(5);
+			if (code != 0) {
+				throw "rig://" + this.server + ":" + this.port + ": '" + cmd + "' return code " + code;
+			}
+		} else {
+			var idx = line.indexOf(":");
+			if (idx > 0) {
+				responseObj[line.substr(0, idx)] = line.substr(idx + 2);
+			}
+		}
+	});
+	
+	return responseObj;
+};
+
+Rig.prototype.get_freq = function() {
+	return +this.send("+f")["Frequency"];
+};
+
+Rig.prototype.set_freq = function(freq) {
+	this.send("+F" + freq);
+};
+
+print("connecting to rigctld at " + options.server + ":" + options.port);
+var rig = new Rig(options.server, options.port);
+

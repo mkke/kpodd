@@ -14,6 +14,8 @@ ifeq ($(findstring mingw32,$(CC)),mingw32)
   KPODD_EXE := kpodd.exe
 endif
 
+V7_OPTIONS=-DV7_ENABLE_SOCKET -DV7_ENABLE_FILE -DV7_ENABLE_CRYPTO -DV7_FORCE_STRICT_MODE 
+
 HID_INCLUDES_linux=$(shell pkg-config libusb-1.0 --cflags)
 HID_INCLUDES=$(HID_INCLUDES_$(ARCH)) -Ihidapi/hidapi
 INCLUDES=$(HID_INCLUDES) -Iv7 -Ipopt
@@ -44,7 +46,7 @@ hidapi/$(ARCH)/hid.o: hidapi/$(ARCH)/hid.c
 	$(CC) $(CFLAGS) $< -o $@
 
 v7/v7-$(ARCH).o: v7/v7.c
-	$(CC) -DV7_FORCE_STRICT_MODE -DV7_STACK_SIZE=32768 $(CFLAGS) $< -o $@
+	$(CC) $(V7_OPTIONS) $(CFLAGS) $< -o $@
 
 $(COBJS): %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
