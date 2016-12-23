@@ -25,6 +25,7 @@ HID_LIBS_windows=-lsetupapi
 HID_LIBS_mac=-framework IOKit -framework CoreFoundation
 HID_LIBS=$(HID_LIBS_$(ARCH))
 V7_LIBS_linux=-lm
+V7_LIBS_windows=-lws2_32
 V7_LIBS=$(V7_LIBS_$(ARCH))
 POPT_LIBS_mac=-liconv
 POPT_LIBS=$(POPT_LIBS_$(ARCH))
@@ -70,7 +71,7 @@ dependencies: popt-1.16.tar.gz
 	git submodule update
 
 clean:
-	rm -f *.o v7/v7-$(ARCH).o hidapi/$(ARCH)/hid.o kpodd
+	rm -f *.o v7/*.o hidapi/{windows,linux,mac}/hid.o kpodd
 	cd popt && make distclean
 
 .PHONY: clean
